@@ -9,7 +9,9 @@ import {
   FileText, 
   DollarSign, 
   Settings,
-  TrendingUp
+  TrendingUp,
+  UserCheck,
+  Building
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -22,6 +24,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Billboards', href: '/billboards', icon: MapPin },
+    { name: 'Partners', href: '/partners', icon: UserCheck },
+    { name: 'Land Owners', href: '/land-owners', icon: Building },
     { name: 'Clients', href: '/clients', icon: Users },
     { name: 'Rentals', href: '/rentals', icon: FileText },
     { name: 'Payments', href: '/payments', icon: DollarSign },
