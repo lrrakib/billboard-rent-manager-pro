@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, MapPin, Users, DollarSign, Plus } from 'lucide-react';
+import { Calendar, MapPin, Users, DollarSign, Plus, FileText } from 'lucide-react';
 
 const Rentals = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -73,6 +72,21 @@ const Rentals = () => {
     const end = new Date(endDate);
     const months = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30));
     return `${months} months`;
+  };
+
+  const handleEdit = (rentalId: number) => {
+    console.log('Edit rental:', rentalId);
+    // Add edit functionality here
+  };
+
+  const handleGenerateInvoice = (rentalId: number) => {
+    console.log('Generate invoice for rental:', rentalId);
+    // Add invoice generation functionality here
+  };
+
+  const handleRecordPayment = (rentalId: number) => {
+    console.log('Record payment for rental:', rentalId);
+    // Add payment recording functionality here
   };
 
   return (
@@ -184,7 +198,7 @@ const Rentals = () => {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Status:</span>
-                        <Badge size="sm" className={getStatusColor(rental.paidStatus)}>
+                        <Badge className={getStatusColor(rental.paidStatus)}>
                           {rental.paidStatus}
                         </Badge>
                       </div>
@@ -192,14 +206,25 @@ const Rentals = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Button className="w-full" variant="outline">
+                    <Button 
+                      className="w-full" 
+                      variant="outline"
+                      onClick={() => handleEdit(rental.id)}
+                    >
                       View Details
                     </Button>
-                    <Button className="w-full" variant="outline">
+                    <Button 
+                      className="w-full" 
+                      variant="outline"
+                      onClick={() => handleGenerateInvoice(rental.id)}
+                    >
                       Generate Invoice
                     </Button>
                     {rental.paidStatus !== 'Paid' && (
-                      <Button className="w-full bg-green-600 hover:bg-green-700">
+                      <Button 
+                        className="w-full bg-green-600 hover:bg-green-700"
+                        onClick={() => handleRecordPayment(rental.id)}
+                      >
                         Record Payment
                       </Button>
                     )}
