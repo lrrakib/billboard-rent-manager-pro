@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import BillboardDetails from '@/components/BillboardDetails';
+import RentalManagementModal from '@/components/RentalManagementModal';
 import { MapPin, Plus, Search, Edit, Calendar, DollarSign, TrendingUp, FileImage } from 'lucide-react';
 
 const Billboards = () => {
@@ -17,6 +17,7 @@ const Billboards = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedBillboard, setSelectedBillboard] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isRentalModalOpen, setIsRentalModalOpen] = useState(false);
 
   // Enhanced mock billboard data with new fields
   const billboards = [
@@ -110,6 +111,11 @@ const Billboards = () => {
   const handleViewDetails = (billboard: any) => {
     setSelectedBillboard(billboard);
     setIsDetailsOpen(true);
+  };
+
+  const handleManageRental = (billboard: any) => {
+    setSelectedBillboard(billboard);
+    setIsRentalModalOpen(true);
   };
 
   return (
@@ -299,6 +305,7 @@ const Billboards = () => {
                   <Button 
                     className="w-full" 
                     variant={billboard.status === 'Available' ? 'default' : 'outline'}
+                    onClick={() => handleManageRental(billboard)}
                   >
                     {billboard.status === 'Available' ? 'Rent Out' : 'Manage Rental'}
                   </Button>
@@ -316,13 +323,20 @@ const Billboards = () => {
           </div>
         )}
 
-        {/* Billboard Details Modal */}
+        {/* Modals */}
         {selectedBillboard && (
-          <BillboardDetails
-            billboard={selectedBillboard}
-            isOpen={isDetailsOpen}
-            onClose={() => setIsDetailsOpen(false)}
-          />
+          <>
+            <BillboardDetails
+              billboard={selectedBillboard}
+              isOpen={isDetailsOpen}
+              onClose={() => setIsDetailsOpen(false)}
+            />
+            <RentalManagementModal
+              billboard={selectedBillboard}
+              isOpen={isRentalModalOpen}
+              onClose={() => setIsRentalModalOpen(false)}
+            />
+          </>
         )}
       </div>
     </div>

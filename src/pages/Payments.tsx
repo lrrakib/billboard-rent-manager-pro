@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,12 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DollarSign, Plus, Search, Download, Edit, Trash2, Eye } from 'lucide-react';
+import PaymentRecordForm from '@/components/PaymentRecordForm';
+import { DollarSign, Plus, Search, Download, Edit, Trash2, Eye, FileText } from 'lucide-react';
 
 const Payments = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [paymentModeFilter, setPaymentModeFilter] = useState('all');
+  const [isRecordFormOpen, setIsRecordFormOpen] = useState(false);
 
   // Mock payment data
   const payments = [
@@ -87,13 +88,18 @@ const Payments = () => {
   };
 
   const handleNewPayment = () => {
-    console.log('Creating new payment');
-    alert('Opening new payment form...');
+    setIsRecordFormOpen(true);
   };
 
   const handleExportPayments = () => {
     console.log('Exporting payments');
     alert('Exporting payment data to CSV...');
+  };
+
+  const handleGenerateReceipt = (paymentId: number) => {
+    console.log('Generating money receipt for payment:', paymentId);
+    // Generate PDF receipt logic here
+    alert(`Generating money receipt PDF for Payment ID: ${paymentId}`);
   };
 
   const totalPayments = filteredPayments.reduce((sum, payment) => sum + payment.amountPaid, 0);
@@ -134,7 +140,7 @@ const Payments = () => {
                 <DollarSign className="w-8 h-8 text-green-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Payments</p>
-                  <p className="text-2xl font-bold text-gray-900">${totalPayments.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-gray-900">৳{totalPayments.toLocaleString()}</p>
                 </div>
               </div>
             </CardContent>
@@ -254,7 +260,7 @@ const Payments = () => {
                     <TableCell className="font-medium">{payment.rentalId}</TableCell>
                     <TableCell>{payment.client}</TableCell>
                     <TableCell>{payment.billboard}</TableCell>
-                    <TableCell className="font-semibold">${payment.amountPaid.toLocaleString()}</TableCell>
+                    <TableCell className="font-semibold">৳{payment.amountPaid.toLocaleString()}</TableCell>
                     <TableCell>{payment.paymentDate}</TableCell>
                     <TableCell>{payment.paymentMode}</TableCell>
                     <TableCell>
@@ -282,6 +288,14 @@ const Payments = () => {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => handleGenerateReceipt(payment.id)}
+                          className="text-green-600 hover:text-green-700"
+                        >
+                          <FileText className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleDeletePayment(payment.id)}
                           className="text-red-600 hover:text-red-700"
                         >
@@ -303,6 +317,12 @@ const Payments = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Payment Record Form */}
+        <PaymentRecordForm
+          isOpen={isRecordFormOpen}
+          onClose={() => setIsRecordFormOpen(false)}
+        />
       </div>
     </div>
   );

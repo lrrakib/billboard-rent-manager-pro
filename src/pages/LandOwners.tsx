@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,12 +9,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin, Plus, Search, Phone, Mail, Calendar, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import LandOwnerDetailsModal from '@/components/LandOwnerDetailsModal';
+import { MapPin, Plus, Search, Phone, Mail, Calendar, AlertTriangle, CheckCircle, Clock, Upload } from 'lucide-react';
 
 const LandOwners = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('owners');
+  const [selectedOwner, setSelectedOwner] = useState(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Mock data
   const landOwners = [
@@ -92,9 +95,23 @@ const LandOwners = () => {
     owner.contactPerson.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleViewDetails = (owner: any) => {
+    setSelectedOwner(owner);
+    setIsDetailsOpen(true);
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
+        {/* ... keep existing code (header) */}
+
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Land Owners</h1>
@@ -110,7 +127,7 @@ const LandOwners = () => {
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Add New Land Owner</DialogTitle>
-                <DialogDescription>Create a new land owner profile</DialogDescription>
+                <DialogDescription>Create a new land owner profile with agreement upload</DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
@@ -133,6 +150,27 @@ const LandOwners = () => {
                   <Label htmlFor="address">Address</Label>
                   <Textarea id="address" placeholder="Enter full address" />
                 </div>
+                <div>
+                  <Label htmlFor="agreement">Land Agreement PDF</Label>
+                  <div className="mt-1 flex items-center gap-4">
+                    <Input 
+                      id="agreement" 
+                      type="file" 
+                      accept=".pdf"
+                      onChange={handleFileUpload}
+                      className="cursor-pointer"
+                    />
+                    <Button type="button" variant="outline" size="sm">
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload
+                    </Button>
+                  </div>
+                  {selectedFile && (
+                    <p className="text-sm text-green-600 mt-1">
+                      Selected: {selectedFile.name}
+                    </p>
+                  )}
+                </div>
                 <div className="flex justify-end space-x-2 pt-4">
                   <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
                   <Button onClick={() => setIsAddDialogOpen(false)}>Add Owner</Button>
@@ -143,12 +181,16 @@ const LandOwners = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
+          {/* ... keep existing code (tabs list) */}
+
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="owners">Land Owners</TabsTrigger>
             <TabsTrigger value="payments">Payment Reminders</TabsTrigger>
           </TabsList>
 
           <TabsContent value="owners" className="space-y-6">
+            {/* ... keep existing code (search section) */}
+
             <div className="mb-6">
               <div className="relative max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -164,6 +206,8 @@ const LandOwners = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredOwners.map((owner) => (
                 <Card key={owner.id} className="hover:shadow-lg transition-shadow duration-200">
+                  {/* ... keep existing code (card header and content) */}
+                  
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
@@ -201,14 +245,23 @@ const LandOwners = () => {
                         </div>
                       </div>
                     </div>
+                    
                     <div className="mt-4 pt-4 border-t">
-                      <Button className="w-full" variant="outline">View Details</Button>
+                      <Button 
+                        className="w-full" 
+                        variant="outline"
+                        onClick={() => handleViewDetails(owner)}
+                      >
+                        View Details
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           </TabsContent>
+
+          {/* ... keep existing code (payments tab) */}
 
           <TabsContent value="payments" className="space-y-6">
             <Card>
@@ -253,6 +306,15 @@ const LandOwners = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Land Owner Details Modal */}
+        {selectedOwner && (
+          <LandOwnerDetailsModal
+            landOwner={selectedOwner}
+            isOpen={isDetailsOpen}
+            onClose={() => setIsDetailsOpen(false)}
+          />
+        )}
       </div>
     </div>
   );
