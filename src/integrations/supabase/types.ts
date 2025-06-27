@@ -9,6 +9,54 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      billboard_documents: {
+        Row: {
+          billboard_id: string
+          created_at: string
+          document_name: string
+          document_type: string
+          document_url: string
+          id: string
+          notes: string | null
+          upload_date: string
+        }
+        Insert: {
+          billboard_id: string
+          created_at?: string
+          document_name: string
+          document_type: string
+          document_url: string
+          id?: string
+          notes?: string | null
+          upload_date?: string
+        }
+        Update: {
+          billboard_id?: string
+          created_at?: string
+          document_name?: string
+          document_type?: string
+          document_url?: string
+          id?: string
+          notes?: string | null
+          upload_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billboard_documents_billboard_id_fkey"
+            columns: ["billboard_id"]
+            isOneToOne: false
+            referencedRelation: "billboard_profit_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billboard_documents_billboard_id_fkey"
+            columns: ["billboard_id"]
+            isOneToOne: false
+            referencedRelation: "billboards_enhanced"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       billboard_rentals: {
         Row: {
           billboard_id: string
@@ -57,6 +105,13 @@ export type Database = {
             foreignKeyName: "billboard_rentals_billboard_id_fkey"
             columns: ["billboard_id"]
             isOneToOne: false
+            referencedRelation: "billboard_profit_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billboard_rentals_billboard_id_fkey"
+            columns: ["billboard_id"]
+            isOneToOne: false
             referencedRelation: "billboards_enhanced"
             referencedColumns: ["id"]
           },
@@ -74,8 +129,10 @@ export type Database = {
           agreement_document_url: string | null
           agreement_end_date: string | null
           agreement_start_date: string | null
+          billboard_identifier: string | null
           created_at: string
           id: string
+          image_urls: string[] | null
           installation_cost: number | null
           installation_date: string | null
           land_owner_id: string | null
@@ -84,6 +141,8 @@ export type Database = {
           rent_amount: number | null
           size: string
           status: string
+          total_installation_cost: number | null
+          total_sft: number | null
           type: string
           updated_at: string
         }
@@ -91,8 +150,10 @@ export type Database = {
           agreement_document_url?: string | null
           agreement_end_date?: string | null
           agreement_start_date?: string | null
+          billboard_identifier?: string | null
           created_at?: string
           id?: string
+          image_urls?: string[] | null
           installation_cost?: number | null
           installation_date?: string | null
           land_owner_id?: string | null
@@ -101,6 +162,8 @@ export type Database = {
           rent_amount?: number | null
           size: string
           status?: string
+          total_installation_cost?: number | null
+          total_sft?: number | null
           type: string
           updated_at?: string
         }
@@ -108,8 +171,10 @@ export type Database = {
           agreement_document_url?: string | null
           agreement_end_date?: string | null
           agreement_start_date?: string | null
+          billboard_identifier?: string | null
           created_at?: string
           id?: string
+          image_urls?: string[] | null
           installation_cost?: number | null
           installation_date?: string | null
           land_owner_id?: string | null
@@ -118,6 +183,8 @@ export type Database = {
           rent_amount?: number | null
           size?: string
           status?: string
+          total_installation_cost?: number | null
+          total_sft?: number | null
           type?: string
           updated_at?: string
         }
@@ -256,6 +323,13 @@ export type Database = {
             foreignKeyName: "installation_costs_billboard_id_fkey"
             columns: ["billboard_id"]
             isOneToOne: false
+            referencedRelation: "billboard_profit_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installation_costs_billboard_id_fkey"
+            columns: ["billboard_id"]
+            isOneToOne: false
             referencedRelation: "billboards_enhanced"
             referencedColumns: ["id"]
           },
@@ -312,6 +386,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "land_owner_payments_billboard_id_fkey"
+            columns: ["billboard_id"]
+            isOneToOne: false
+            referencedRelation: "billboard_profit_summary"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "land_owner_payments_billboard_id_fkey"
             columns: ["billboard_id"]
@@ -403,6 +484,13 @@ export type Database = {
             foreignKeyName: "partner_investments_billboard_id_fkey"
             columns: ["billboard_id"]
             isOneToOne: false
+            referencedRelation: "billboard_profit_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_investments_billboard_id_fkey"
+            columns: ["billboard_id"]
+            isOneToOne: false
             referencedRelation: "billboards_enhanced"
             referencedColumns: ["id"]
           },
@@ -450,7 +538,55 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      billboard_profit_summary: {
+        Row: {
+          billboard_identifier: string | null
+          id: string | null
+          location: string | null
+          partner_count: number | null
+          total_installation_cost: number | null
+          total_profit: number | null
+          total_yearly_rental: number | null
+        }
+        Relationships: []
+      }
+      partner_profit_share: {
+        Row: {
+          billboard_id: string | null
+          billboard_identifier: string | null
+          investment_amount: number | null
+          investment_percentage: number | null
+          location: string | null
+          partner_id: string | null
+          partner_name: string | null
+          partner_profit_share: number | null
+          total_profit: number | null
+          total_yearly_rental: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_investments_billboard_id_fkey"
+            columns: ["billboard_id"]
+            isOneToOne: false
+            referencedRelation: "billboard_profit_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_investments_billboard_id_fkey"
+            columns: ["billboard_id"]
+            isOneToOne: false
+            referencedRelation: "billboards_enhanced"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_investments_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never
