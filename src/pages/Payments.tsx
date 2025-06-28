@@ -1,110 +1,66 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Search, DollarSign, FileText, Calendar, Download } from 'lucide-react';
 import PaymentRecordForm from '@/components/PaymentRecordForm';
-import { DollarSign, Plus, Search, Download, Edit, Trash2, Eye, FileText } from 'lucide-react';
+import MoneyReceiptGenerator from '@/components/MoneyReceiptGenerator';
 
 const Payments = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [paymentModeFilter, setPaymentModeFilter] = useState('all');
-  const [isRecordFormOpen, setIsRecordFormOpen] = useState(false);
+  const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
 
-  // Mock payment data
+  // Mock payments data - this should come from Supabase
   const payments = [
     {
       id: 1,
-      rentalId: 'R-001',
-      client: 'Tech Corp',
-      billboard: 'Downtown Plaza',
-      amountPaid: 15000,
-      paymentDate: '2024-01-15',
-      paymentMode: 'Bank Transfer',
-      status: 'Completed',
-      notes: 'First installment payment'
+      receipt_id: 'MR-000001',
+      client_name: 'Tech Corp',
+      billboard_location: 'Downtown Plaza',
+      invoice_number: 'INV-2024-001',
+      installment: '1st Installment',
+      amount: 150000,
+      payment_date: '2024-01-10',
+      payment_method: 'Bank Transfer',
+      cheque_number: 'TXN123456789',
+      bank_name: 'Dutch Bangla Bank',
+      status: 'Received',
+      notes: 'First installment payment received on time'
     },
     {
       id: 2,
-      rentalId: 'R-002',
-      client: 'Fashion Brand',
-      billboard: 'Airport Terminal',
-      amountPaid: 12000,
-      paymentDate: '2024-02-01',
-      paymentMode: 'Credit Card',
-      status: 'Completed',
-      notes: 'Monthly payment'
-    },
-    {
-      id: 3,
-      rentalId: 'R-003',
-      client: 'Auto Dealership',
-      billboard: 'Highway Exit 12',
-      amountPaid: 5400,
-      paymentDate: '2024-03-10',
-      paymentMode: 'Check',
-      status: 'Pending',
-      notes: 'Partial payment received'
+      receipt_id: 'MR-000002',
+      client_name: 'Fashion Brand',
+      billboard_location: 'Airport Terminal',
+      invoice_number: 'INV-2024-002',
+      installment: '2nd Installment',
+      amount: 80000,
+      payment_date: '2024-02-15',
+      payment_method: 'Cheque',
+      cheque_number: 'CHQ987654321',
+      bank_name: 'Standard Bank',
+      status: 'Received',
+      notes: 'Partial payment - remaining ৳20,000 to be paid with next bill'
     }
   ];
 
-  const filteredPayments = payments.filter(payment => {
-    const matchesSearch = 
-      payment.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      payment.billboard.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      payment.rentalId.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || payment.status.toLowerCase() === statusFilter.toLowerCase();
-    const matchesMode = paymentModeFilter === 'all' || payment.paymentMode.toLowerCase() === paymentModeFilter.toLowerCase();
-    return matchesSearch && matchesStatus && matchesMode;
-  });
+  const filteredPayments = payments.filter(payment =>
+    payment.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    payment.billboard_location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    payment.receipt_id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Completed': return 'bg-green-100 text-green-800';
-      case 'Pending': return 'bg-yellow-100 text-yellow-800';
-      case 'Failed': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const totalPayments = payments.reduce((sum, payment) => sum + payment.amount, 0);
+
+  const handleGenerateReceipt = (payment: any) => {
+    setSelectedPayment(payment);
+    setIsReceiptModalOpen(true);
   };
-
-  const handleViewPayment = (paymentId: number) => {
-    console.log('Viewing payment:', paymentId);
-    alert(`Viewing payment details for ID: ${paymentId}`);
-  };
-
-  const handleEditPayment = (paymentId: number) => {
-    console.log('Editing payment:', paymentId);
-    alert(`Editing payment ID: ${paymentId}`);
-  };
-
-  const handleDeletePayment = (paymentId: number) => {
-    console.log('Deleting payment:', paymentId);
-    if (confirm('Are you sure you want to delete this payment record?')) {
-      alert(`Payment ID: ${paymentId} deleted successfully`);
-    }
-  };
-
-  const handleNewPayment = () => {
-    setIsRecordFormOpen(true);
-  };
-
-  const handleExportPayments = () => {
-    console.log('Exporting payments');
-    alert('Exporting payment data to CSV...');
-  };
-
-  const handleGenerateReceipt = (paymentId: number) => {
-    console.log('Generating money receipt for payment:', paymentId);
-    // Generate PDF receipt logic here
-    alert(`Generating money receipt PDF for Payment ID: ${paymentId}`);
-  };
-
-  const totalPayments = filteredPayments.reduce((sum, payment) => sum + payment.amountPaid, 0);
-  const completedPayments = filteredPayments.filter(p => p.status === 'Completed').length;
-  const pendingPayments = filteredPayments.filter(p => p.status === 'Pending').length;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -114,214 +70,150 @@ const Payments = () => {
             <h1 className="text-3xl font-bold text-gray-900">Payments</h1>
             <p className="text-gray-600 mt-2">Track and manage all payment transactions</p>
           </div>
-          <div className="flex space-x-3">
-            <Button 
-              variant="outline"
-              onClick={handleExportPayments}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
-            <Button 
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={handleNewPayment}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Record Payment
-            </Button>
-          </div>
+          <Button 
+            className="bg-green-600 hover:bg-green-700"
+            onClick={() => setIsRecordPaymentOpen(true)}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Record Payment
+          </Button>
         </div>
 
-        {/* Payment Summary Cards */}
+        {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <DollarSign className="w-8 h-8 text-green-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Payments</p>
-                  <p className="text-2xl font-bold text-gray-900">৳{totalPayments.toLocaleString()}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <span className="text-green-600 font-bold">{completedPayments}</span>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Completed</p>
-                  <p className="text-2xl font-bold text-gray-900">{completedPayments}</p>
-                </div>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <DollarSign className="w-4 h-4" />
+                Total Received
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                ৳{totalPayments.toLocaleString()}
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <span className="text-yellow-600 font-bold">{pendingPayments}</span>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Pending</p>
-                  <p className="text-2xl font-bold text-gray-900">{pendingPayments}</p>
-                </div>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Total Transactions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-700">
+                {payments.length}
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-bold">{filteredPayments.length}</span>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Records</p>
-                  <p className="text-2xl font-bold text-gray-900">{filteredPayments.length}</p>
-                </div>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                This Month
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">
+                ৳{payments.filter(p => new Date(p.payment_date).getMonth() === new Date().getMonth()).reduce((sum, p) => sum + p.amount, 0).toLocaleString()}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">
+                Avg. Payment
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-700">
+                ৳{Math.round(totalPayments / payments.length).toLocaleString()}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters */}
-        <Card className="mb-8">
-          <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="Search by client, billboard, or rental ID..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={paymentModeFilter} onValueChange={setPaymentModeFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filter by payment mode" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Modes</SelectItem>
-                  <SelectItem value="bank transfer">Bank Transfer</SelectItem>
-                  <SelectItem value="credit card">Credit Card</SelectItem>
-                  <SelectItem value="check">Check</SelectItem>
-                  <SelectItem value="cash">Cash</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Search payments..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
 
         {/* Payments Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Payment Records</CardTitle>
-            <CardDescription>Detailed view of all payment transactions</CardDescription>
+            <CardTitle>Payment History</CardTitle>
+            <CardDescription>All recorded payment transactions</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Rental ID</TableHead>
+                  <TableHead>Receipt ID</TableHead>
                   <TableHead>Client</TableHead>
                   <TableHead>Billboard</TableHead>
+                  <TableHead>Invoice</TableHead>
                   <TableHead>Amount</TableHead>
-                  <TableHead>Payment Date</TableHead>
-                  <TableHead>Payment Mode</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Method</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Notes</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredPayments.map((payment) => (
                   <TableRow key={payment.id}>
-                    <TableCell className="font-medium">{payment.rentalId}</TableCell>
-                    <TableCell>{payment.client}</TableCell>
-                    <TableCell>{payment.billboard}</TableCell>
-                    <TableCell className="font-semibold">৳{payment.amountPaid.toLocaleString()}</TableCell>
-                    <TableCell>{payment.paymentDate}</TableCell>
-                    <TableCell>{payment.paymentMode}</TableCell>
+                    <TableCell className="font-medium">{payment.receipt_id}</TableCell>
+                    <TableCell>{payment.client_name}</TableCell>
+                    <TableCell>{payment.billboard_location}</TableCell>
+                    <TableCell>{payment.invoice_number}</TableCell>
+                    <TableCell className="font-semibold text-green-600">
+                      ৳{payment.amount.toLocaleString()}
+                    </TableCell>
+                    <TableCell>{payment.payment_date}</TableCell>
+                    <TableCell>{payment.payment_method}</TableCell>
                     <TableCell>
-                      <Badge className={getStatusColor(payment.status)}>
+                      <Badge className="bg-green-100 text-green-800">
                         {payment.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="max-w-xs truncate">{payment.notes}</TableCell>
                     <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewPayment(payment.id)}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditPayment(payment.id)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleGenerateReceipt(payment.id)}
-                          className="text-green-600 hover:text-green-700"
-                        >
-                          <FileText className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeletePayment(payment.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleGenerateReceipt(payment)}
+                      >
+                        <Download className="w-4 h-4 mr-1" />
+                        Money Receipt
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-
-            {filteredPayments.length === 0 && (
-              <div className="text-center py-12">
-                <DollarSign className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No payments found</h3>
-                <p className="text-gray-600">Try adjusting your search terms or filters</p>
-              </div>
-            )}
           </CardContent>
         </Card>
 
-        {/* Payment Record Form */}
-        <PaymentRecordForm
-          isOpen={isRecordFormOpen}
-          onClose={() => setIsRecordFormOpen(false)}
+        <PaymentRecordForm 
+          isOpen={isRecordPaymentOpen}
+          onClose={() => setIsRecordPaymentOpen(false)}
+        />
+
+        <MoneyReceiptGenerator
+          payment={selectedPayment}
+          isOpen={isReceiptModalOpen}
+          onClose={() => setIsReceiptModalOpen(false)}
         />
       </div>
     </div>

@@ -67,6 +67,8 @@ export type Database = {
           id: string
           invoice_date: number
           invoice_frequency: string
+          notes: string | null
+          payment_structure: string | null
           rental_amount: number
           start_date: string
           status: string
@@ -81,6 +83,8 @@ export type Database = {
           id?: string
           invoice_date: number
           invoice_frequency?: string
+          notes?: string | null
+          payment_structure?: string | null
           rental_amount: number
           start_date: string
           status?: string
@@ -95,6 +99,8 @@ export type Database = {
           id?: string
           invoice_date?: number
           invoice_frequency?: string
+          notes?: string | null
+          payment_structure?: string | null
           rental_amount?: number
           start_date?: string
           status?: string
@@ -117,6 +123,27 @@ export type Database = {
           },
           {
             foreignKeyName: "billboard_rentals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_enhanced"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_rentals_billboard"
+            columns: ["billboard_id"]
+            isOneToOne: false
+            referencedRelation: "billboard_profit_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_rentals_billboard"
+            columns: ["billboard_id"]
+            isOneToOne: false
+            referencedRelation: "billboards_enhanced"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_rentals_client"
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients_enhanced"
@@ -196,6 +223,13 @@ export type Database = {
             referencedRelation: "land_owners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_billboards_land_owner"
+            columns: ["land_owner_id"]
+            isOneToOne: false
+            referencedRelation: "land_owners"
+            referencedColumns: ["id"]
+          },
         ]
       }
       client_payments: {
@@ -208,6 +242,7 @@ export type Database = {
           notes: string | null
           payment_date: string
           payment_method: string | null
+          receipt_id: string | null
           rental_id: string
           status: string
         }
@@ -220,6 +255,7 @@ export type Database = {
           notes?: string | null
           payment_date: string
           payment_method?: string | null
+          receipt_id?: string | null
           rental_id: string
           status?: string
         }
@@ -232,12 +268,20 @@ export type Database = {
           notes?: string | null
           payment_date?: string
           payment_method?: string | null
+          receipt_id?: string | null
           rental_id?: string
           status?: string
         }
         Relationships: [
           {
             foreignKeyName: "client_payments_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "billboard_rentals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_client_payments_rental"
             columns: ["rental_id"]
             isOneToOne: false
             referencedRelation: "billboard_rentals"
@@ -320,6 +364,27 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_installation_billboard"
+            columns: ["billboard_id"]
+            isOneToOne: false
+            referencedRelation: "billboard_profit_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_installation_billboard"
+            columns: ["billboard_id"]
+            isOneToOne: false
+            referencedRelation: "billboards_enhanced"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_installation_partner"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "installation_costs_billboard_id_fkey"
             columns: ["billboard_id"]
             isOneToOne: false
@@ -386,6 +451,27 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_land_owner_payments_billboard"
+            columns: ["billboard_id"]
+            isOneToOne: false
+            referencedRelation: "billboard_profit_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_land_owner_payments_billboard"
+            columns: ["billboard_id"]
+            isOneToOne: false
+            referencedRelation: "billboards_enhanced"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_land_owner_payments_owner"
+            columns: ["land_owner_id"]
+            isOneToOne: false
+            referencedRelation: "land_owners"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "land_owner_payments_billboard_id_fkey"
             columns: ["billboard_id"]
@@ -481,6 +567,27 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_partner_investments_billboard"
+            columns: ["billboard_id"]
+            isOneToOne: false
+            referencedRelation: "billboard_profit_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_partner_investments_billboard"
+            columns: ["billboard_id"]
+            isOneToOne: false
+            referencedRelation: "billboards_enhanced"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_partner_investments_partner"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "partner_investments_billboard_id_fkey"
             columns: ["billboard_id"]
             isOneToOne: false
@@ -564,6 +671,27 @@ export type Database = {
           total_yearly_rental: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_partner_investments_billboard"
+            columns: ["billboard_id"]
+            isOneToOne: false
+            referencedRelation: "billboard_profit_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_partner_investments_billboard"
+            columns: ["billboard_id"]
+            isOneToOne: false
+            referencedRelation: "billboards_enhanced"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_partner_investments_partner"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "partner_investments_billboard_id_fkey"
             columns: ["billboard_id"]

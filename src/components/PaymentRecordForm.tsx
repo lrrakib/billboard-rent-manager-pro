@@ -15,6 +15,7 @@ interface PaymentRecordFormProps {
 
 const PaymentRecordForm: React.FC<PaymentRecordFormProps> = ({ isOpen, onClose }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedBillboard, setSelectedBillboard] = useState('');
 
   const mockBillboards = [
     { id: 1, identifier: "BB-001", location: "Downtown Plaza", client: "Tech Corp" },
@@ -52,7 +53,7 @@ const PaymentRecordForm: React.FC<PaymentRecordFormProps> = ({ isOpen, onClose }
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="billboard">Billboard</Label>
-              <Select required>
+              <Select value={selectedBillboard} onValueChange={setSelectedBillboard} required>
                 <SelectTrigger>
                   <SelectValue placeholder="Select billboard" />
                 </SelectTrigger>

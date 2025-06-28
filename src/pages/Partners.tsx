@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,10 +7,15 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Users, Plus, Search, Phone, Mail, MapPin, DollarSign } from 'lucide-react';
+import PartnerInvestmentDetails from '@/components/PartnerInvestmentDetails';
+import AddInvestmentModal from '@/components/AddInvestmentModal';
 
 const Partners = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [selectedPartner, setSelectedPartner] = useState(null);
+  const [isInvestmentDetailsOpen, setIsInvestmentDetailsOpen] = useState(false);
+  const [isAddInvestmentOpen, setIsAddInvestmentOpen] = useState(false);
 
   // Mock data - this will come from Supabase
   const partners = [
@@ -43,6 +47,16 @@ const Partners = () => {
     partner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     partner.contactPerson.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleViewInvestmentDetails = (partner: any) => {
+    setSelectedPartner(partner);
+    setIsInvestmentDetailsOpen(true);
+  };
+
+  const handleAddInvestment = (partner: any) => {
+    setSelectedPartner(partner);
+    setIsAddInvestmentOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -162,10 +176,18 @@ const Partners = () => {
                   </div>
                 </div>
                 <div className="mt-4 pt-4 border-t space-y-2">
-                  <Button className="w-full" variant="outline">
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    onClick={() => handleViewInvestmentDetails(partner)}
+                  >
                     View Investment Details
                   </Button>
-                  <Button className="w-full" size="sm">
+                  <Button 
+                    className="w-full" 
+                    size="sm"
+                    onClick={() => handleAddInvestment(partner)}
+                  >
                     <DollarSign className="w-4 h-4 mr-2" />
                     Add Investment
                   </Button>
@@ -174,6 +196,22 @@ const Partners = () => {
             </Card>
           ))}
         </div>
+
+        <PartnerInvestmentDetails
+          partner={selectedPartner}
+          isOpen={isInvestmentDetailsOpen}
+          onClose={() => setIsInvestmentDetailsOpen(false)}
+          onAddInvestment={() => {
+            setIsInvestmentDetailsOpen(false);
+            setIsAddInvestmentOpen(true);
+          }}
+        />
+
+        <AddInvestmentModal
+          partner={selectedPartner}
+          isOpen={isAddInvestmentOpen}
+          onClose={() => setIsAddInvestmentOpen(false)}
+        />
       </div>
     </div>
   );
