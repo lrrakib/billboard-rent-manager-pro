@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { Button } from './ui/button';
 import { 
   LayoutDashboard, 
-  Billboard, 
+  RectangleHorizontal, 
   Users, 
   Handshake, 
   MapPin, 
@@ -23,7 +22,7 @@ export const Layout = () => {
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Billboards', href: '/billboards', icon: Billboard },
+    { name: 'Billboards', href: '/billboards', icon: RectangleHorizontal },
     { name: 'Clients', href: '/clients', icon: Users },
     { name: 'Partners', href: '/partners', icon: Handshake },
     { name: 'Land Owners', href: '/landowners', icon: MapPin },

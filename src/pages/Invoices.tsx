@@ -24,8 +24,8 @@ const Invoices = () => {
         .from('billboard_rentals')
         .select(`
           *,
-          clients_enhanced(company_name, contact_person, contact_email),
-          billboards_enhanced(billboard_identifier, location)
+          clients_enhanced!billboard_rentals_client_id_fkey(company_name, contact_person, contact_email),
+          billboards_enhanced!billboard_rentals_billboard_id_fkey(billboard_identifier, location)
         `)
         .eq('status', 'Active');
       
@@ -42,9 +42,9 @@ const Invoices = () => {
         .from('client_payments')
         .select(`
           *,
-          billboard_rentals(
-            clients_enhanced(company_name),
-            billboards_enhanced(billboard_identifier, location)
+          billboard_rentals!client_payments_rental_id_fkey(
+            clients_enhanced!billboard_rentals_client_id_fkey(company_name),
+            billboards_enhanced!billboard_rentals_billboard_id_fkey(billboard_identifier, location)
           )
         `)
         .order('payment_date', { ascending: false });
@@ -62,8 +62,8 @@ const Invoices = () => {
         .from('land_owner_payments')
         .select(`
           *,
-          land_owners(name),
-          billboards_enhanced(billboard_identifier, location)
+          land_owners!land_owner_payments_land_owner_id_fkey(name),
+          billboards_enhanced!land_owner_payments_billboard_id_fkey(billboard_identifier, location)
         `)
         .order('created_at', { ascending: false });
       
