@@ -4,8 +4,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./hooks/useAuth";
 import { Layout } from "./components/Layout";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Billboards from "./pages/Billboards";
 import Clients from "./pages/Clients";
@@ -25,21 +28,56 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Index />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="billboards" element={<Billboards />} />
-            <Route path="clients" element={<Clients />} />
-            <Route path="partners" element={<Partners />} />
-            <Route path="landowners" element={<LandOwners />} />
-            <Route path="rentals" element={<Rentals />} />
-            <Route path="payments" element={<Payments />} />
-            <Route path="reports" element={<Reports />} />
-            <Route path="invoices" element={<Invoices />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<Index />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="billboards" element={
+                <ProtectedRoute requiredRole="manager">
+                  <Billboards />
+                </ProtectedRoute>
+              } />
+              <Route path="clients" element={
+                <ProtectedRoute requiredRole="manager">
+                  <Clients />
+                </ProtectedRoute>
+              } />
+              <Route path="partners" element={
+                <ProtectedRoute requiredRole="manager">
+                  <Partners />
+                </ProtectedRoute>
+              } />
+              <Route path="landowners" element={
+                <ProtectedRoute requiredRole="manager">
+                  <LandOwners />
+                </ProtectedRoute>
+              } />
+              <Route path="rentals" element={
+                <ProtectedRoute requiredRole="manager">
+                  <Rentals />
+                </ProtectedRoute>
+              } />
+              <Route path="payments" element={
+                <ProtectedRoute requiredRole="admin">
+                  <Payments />
+                </ProtectedRoute>
+              } />
+              <Route path="reports" element={
+                <ProtectedRoute requiredRole="manager">
+                  <Reports />
+                </ProtectedRoute>
+              } />
+              <Route path="invoices" element={<Invoices />} />
+              <Route path="*" element={<NotFound />} />
+            </Route>
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
