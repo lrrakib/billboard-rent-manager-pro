@@ -8,13 +8,22 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Download, Eye, Filter } from 'lucide-react';
+import { Search, Download, Eye, Filter, Calendar, Calculator, FileText } from 'lucide-react';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import MoneyReceiptGenerator from '@/components/MoneyReceiptGenerator';
 
 const Invoices = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
 
   // Fetch rental invoices
   const { data: rentalInvoices, isLoading: loadingRentals } = useQuery({
@@ -34,11 +43,11 @@ const Invoices = () => {
     }
   });
 
-  // Fetch client payments
+  // Fetch client payments with date filtering
   const { data: clientPayments, isLoading: loadingPayments } = useQuery({
-    queryKey: ['client-payments'],
+    queryKey: ['client-payments', startDate, endDate],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('client_payments')
         .select(`
           *,
@@ -46,8 +55,16 @@ const Invoices = () => {
             clients_enhanced!billboard_rentals_client_id_fkey(company_name),
             billboards_enhanced!billboard_rentals_billboard_id_fkey(billboard_identifier, location)
           )
-        `)
-        .order('payment_date', { ascending: false });
+        `);
+
+      if (startDate) {
+        query = query.gte('payment_date', startDate);
+      }
+      if (endDate) {
+        query = query.lte('payment_date', endDate);
+      }
+
+      const { data, error } = await query.order('payment_date', { ascending: false });
       
       if (error) throw error;
       return data || [];
@@ -72,15 +89,83 @@ const Invoices = () => {
     }
   });
 
-  const generateInvoice = (rental: any) => {
-    console.log('Generating invoice for rental:', rental.id);
-    // This would integrate with your PDF generation system
-    alert('Invoice generation feature - integrate with PDF library');
+  const generateInvoice = async (rental: any) => {
+    const element = document.createElement('div');
+    element.innerHTML = `
+      <div style="padding: 20px; font-family: Arial, sans-serif;">
+        <h1 style="text-align: center; margin-bottom: 30px;">INVOICE</h1>
+        <div style="margin-bottom: 20px;">
+          <h3>Client: ${rental.clients_enhanced?.company_name}</h3>
+          <p>Billboard: ${rental.billboards_enhanced?.billboard_identifier}</p>
+          <p>Location: ${rental.billboards_enhanced?.location}</p>
+          <p>Amount: ৳${rental.rental_amount?.toLocaleString()}</p>
+          <p>Period: ${format(new Date(rental.start_date), 'MMM dd, yyyy')} - ${format(new Date(rental.end_date), 'MMM dd, yyyy')}</p>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(element);
+    const canvas = await html2canvas(element);
+    document.body.removeChild(element);
+    
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF();
+    pdf.addImage(imgData, 'PNG', 10, 10, 190, 0);
+    pdf.save(`invoice_${rental.billboards_enhanced?.billboard_identifier}.pdf`);
   };
 
-  const viewInvoiceDetails = (rental: any) => {
-    console.log('Viewing invoice details:', rental.id);
-    // This would open a detailed invoice modal
+  const viewPaymentReceipt = (payment: any) => {
+    setSelectedPayment(payment);
+    setIsReceiptOpen(true);
+  };
+
+  const exportFilteredPDF = async () => {
+    const filteredData = clientPayments?.filter(payment => {
+      const paymentDate = payment.payment_date;
+      return (!startDate || paymentDate >= startDate) && (!endDate || paymentDate <= endDate);
+    });
+
+    const totalAmount = filteredData?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
+
+    const element = document.createElement('div');
+    element.innerHTML = `
+      <div style="padding: 20px; font-family: Arial, sans-serif;">
+        <h1 style="text-align: center; margin-bottom: 30px;">PAYMENT SUMMARY REPORT</h1>
+        <p><strong>Period:</strong> ${startDate || 'Start'} to ${endDate || 'End'}</p>
+        <p><strong>Total Amount:</strong> ৳${totalAmount.toLocaleString()}</p>
+        <p><strong>Total Payments:</strong> ${filteredData?.length || 0}</p>
+        <hr style="margin: 20px 0;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background-color: #f0f0f0;">
+              <th style="border: 1px solid #ddd; padding: 8px;">Receipt ID</th>
+              <th style="border: 1px solid #ddd; padding: 8px;">Client</th>
+              <th style="border: 1px solid #ddd; padding: 8px;">Amount</th>
+              <th style="border: 1px solid #ddd; padding: 8px;">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredData?.map(payment => `
+              <tr>
+                <td style="border: 1px solid #ddd; padding: 8px;">${payment.receipt_id}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${payment.billboard_rentals?.clients_enhanced?.company_name || 'N/A'}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">৳${payment.amount?.toLocaleString()}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${format(new Date(payment.payment_date), 'MMM dd, yyyy')}</td>
+              </tr>
+            `).join('') || ''}
+          </tbody>
+        </table>
+      </div>
+    `;
+    
+    document.body.appendChild(element);
+    const canvas = await html2canvas(element);
+    document.body.removeChild(element);
+    
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF();
+    pdf.addImage(imgData, 'PNG', 10, 10, 190, 0);
+    pdf.save(`payment_summary_${startDate}_${endDate}.pdf`);
   };
 
   const filteredRentals = rentalInvoices?.filter(rental => {
@@ -104,10 +189,12 @@ const Invoices = () => {
             <h1 className="text-3xl font-bold text-gray-900">Invoice Management</h1>
             <p className="text-gray-600 mt-2">Comprehensive invoice tracking and management</p>
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <Download className="w-4 h-4 mr-2" />
-            Export All Invoices
-          </Button>
+          <div className="flex space-x-2">
+            <Button onClick={exportFilteredPDF} className="bg-blue-600 hover:bg-blue-700">
+              <Download className="w-4 h-4 mr-2" />
+              Export Filtered PDF
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -119,7 +206,7 @@ const Invoices = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
@@ -127,6 +214,26 @@ const Invoices = () => {
                   placeholder="Search invoices..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  type="date"
+                  className="pl-10"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  placeholder="Start Date"
+                />
+              </div>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  type="date"
+                  className="pl-10"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  placeholder="End Date"
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -155,10 +262,38 @@ const Invoices = () => {
                 setSearchTerm('');
                 setStatusFilter('all');
                 setTypeFilter('all');
+                setStartDate('');
+                setEndDate('');
               }}>
                 Clear Filters
               </Button>
             </div>
+            
+            {/* Summary Section */}
+            {(startDate || endDate) && (
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <Calculator className="w-5 h-5 text-blue-600" />
+                    <span className="font-medium">Filtered Summary:</span>
+                  </div>
+                  <div className="flex items-center space-x-6">
+                    <span className="text-sm">
+                      <strong>Total Amount:</strong> ৳{clientPayments?.filter(payment => {
+                        const paymentDate = payment.payment_date;
+                        return (!startDate || paymentDate >= startDate) && (!endDate || paymentDate <= endDate);
+                      }).reduce((sum, payment) => sum + (payment.amount || 0), 0).toLocaleString()}
+                    </span>
+                    <span className="text-sm">
+                      <strong>Total Payments:</strong> {clientPayments?.filter(payment => {
+                        const paymentDate = payment.payment_date;
+                        return (!startDate || paymentDate >= startDate) && (!endDate || paymentDate <= endDate);
+                      }).length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -220,7 +355,7 @@ const Invoices = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => viewInvoiceDetails(rental)}
+                            onClick={() => navigate(`/rentals/${rental.id}`)}
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
@@ -258,6 +393,7 @@ const Invoices = () => {
                   <TableHead>Period</TableHead>
                   <TableHead>Method</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -284,6 +420,15 @@ const Invoices = () => {
                       }>
                         {payment.status}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => viewPaymentReceipt(payment)}
+                      >
+                        <FileText className="w-4 h-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -343,6 +488,12 @@ const Invoices = () => {
             </Table>
           </CardContent>
         </Card>
+
+        <MoneyReceiptGenerator
+          payment={selectedPayment}
+          isOpen={isReceiptOpen}
+          onClose={() => setIsReceiptOpen(false)}
+        />
       </div>
     </div>
   );

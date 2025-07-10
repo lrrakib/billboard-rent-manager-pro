@@ -15,6 +15,7 @@ import Clients from "./pages/Clients";
 import Partners from "./pages/Partners";
 import LandOwners from "./pages/LandOwners";
 import Rentals from "./pages/Rentals";
+import RentalDetails from "./pages/RentalDetails";
 import Payments from "./pages/Payments";
 import Reports from "./pages/Reports";
 import Invoices from "./pages/Invoices";
@@ -61,6 +62,11 @@ const App = () => (
               <Route path="rentals" element={
                 <ProtectedRoute requiredRole="manager">
                   <Rentals />
+                </ProtectedRoute>
+              } />
+              <Route path="rentals/:id" element={
+                <ProtectedRoute requiredRole="manager">
+                  <RentalDetails />
                 </ProtectedRoute>
               } />
               <Route path="payments" element={

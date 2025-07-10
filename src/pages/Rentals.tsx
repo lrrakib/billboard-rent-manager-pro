@@ -1,73 +1,51 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import RentalCard from '@/components/RentalCard';
 import RentalFilters from '@/components/RentalFilters';
-import RentalDetailsModal from '@/components/RentalDetailsModal';
 import InvoiceModal from '@/components/InvoiceModal';
 
 const Rentals = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedRental, setSelectedRental] = useState(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [invoiceType, setInvoiceType] = useState('system');
 
-  // Enhanced mock rental data with payment tracking
-  const rentals = [
-    {
-      id: 1,
-      client: "Tech Corp",
-      billboard: "Downtown Plaza",
-      startDate: "2024-01-01",
-      endDate: "2024-12-31",
-      totalAmount: 600000,
-      invoiceFrequency: "quarterly",
-      paymentStructure: "25-50-25",
-      invoices: [
-        { id: 1, amount: 150000, dueDate: "2024-01-15", status: "paid", paidDate: "2024-01-10" },
-        { id: 2, amount: 300000, dueDate: "2024-04-15", status: "paid", paidDate: "2024-04-12" },
-        { id: 3, amount: 150000, dueDate: "2024-07-15", status: "pending", paidDate: null },
-        { id: 4, amount: 0, dueDate: "2024-10-15", status: "not_due", paidDate: null }
-      ],
-      pvcCost: 25000,
-      fittingCost: 15000
-    },
-    {
-      id: 2,
-      client: "Fashion Brand",
-      billboard: "Airport Terminal",
-      startDate: "2024-02-15",
-      endDate: "2024-08-15",
-      totalAmount: 480000,
-      invoiceFrequency: "monthly",
-      paymentStructure: "equal",
-      invoices: [
-        { id: 1, amount: 80000, status: "paid" },
-        { id: 2, amount: 80000, status: "paid" },
-        { id: 3, amount: 80000, status: "overdue" },
-        { id: 4, amount: 80000, status: "pending" },
-        { id: 5, amount: 80000, status: "not_due" },
-        { id: 6, amount: 80000, status: "not_due" }
-      ],
-      pvcCost: 30000,
-      fittingCost: 20000
+  // Fetch rentals from database
+  const { data: rentals = [], isLoading } = useQuery({
+    queryKey: ['rentals'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('billboard_rentals')
+        .select(`
+          *,
+          clients_enhanced!billboard_rentals_client_id_fkey(company_name, contact_person, contact_email),
+          billboards_enhanced!billboard_rentals_billboard_id_fkey(billboard_identifier, location, size, type)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
     }
-  ];
+  });
 
   const filteredRentals = rentals.filter(rental => {
     const matchesSearch = 
-      rental.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rental.billboard.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || rental.invoices.some(invoice => invoice.status.toLowerCase() === statusFilter.toLowerCase());
+      rental.clients_enhanced?.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rental.billboards_enhanced?.billboard_identifier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rental.billboards_enhanced?.location?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || rental.status.toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesStatus;
   });
 
   const handleViewDetails = (rental: any) => {
-    setSelectedRental(rental);
-    setIsDetailsOpen(true);
+    navigate(`/rentals/${rental.id}`);
   };
 
   const handleGenerateInvoice = (rental: any, type: string = 'system') => {
@@ -103,17 +81,21 @@ const Rentals = () => {
         />
 
         {/* Rentals List */}
-        <div className="space-y-4">
-          {filteredRentals.map((rental) => (
-            <RentalCard
-              key={rental.id}
-              rental={rental}
-              onViewDetails={handleViewDetails}
-              onGenerateInvoice={handleGenerateInvoice}
-              onRecordPayment={handleRecordPayment}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="text-center py-8">Loading rentals...</div>
+        ) : (
+          <div className="space-y-4">
+            {filteredRentals.map((rental) => (
+              <RentalCard
+                key={rental.id}
+                rental={rental}
+                onViewDetails={handleViewDetails}
+                onGenerateInvoice={handleGenerateInvoice}
+                onRecordPayment={handleRecordPayment}
+              />
+            ))}
+          </div>
+        )}
 
         {filteredRentals.length === 0 && (
           <div className="text-center py-12">
@@ -122,12 +104,6 @@ const Rentals = () => {
             <p className="text-gray-600">Try adjusting your search terms or filters</p>
           </div>
         )}
-
-        <RentalDetailsModal
-          rental={selectedRental}
-          isOpen={isDetailsOpen}
-          onClose={() => setIsDetailsOpen(false)}
-        />
 
         <InvoiceModal
           rental={selectedRental}

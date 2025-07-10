@@ -50,9 +50,7 @@ const RentalCard: React.FC<RentalCardProps> = ({
   };
 
   const getOverallStatus = () => {
-    if (rental.invoices.every(invoice => invoice.status === 'paid')) return 'Paid';
-    if (rental.invoices.some(invoice => invoice.status === 'pending')) return 'Partial';
-    return 'Unpaid';
+    return rental.status || 'Unknown';
   };
 
   return (
@@ -62,15 +60,15 @@ const RentalCard: React.FC<RentalCardProps> = ({
           <div>
             <CardTitle className="text-lg flex items-center">
               <Users className="w-5 h-5 mr-2 text-blue-600" />
-              {rental.client}
+              {rental.clients_enhanced?.company_name}
             </CardTitle>
             <CardDescription className="flex items-center mt-1">
               <MapPin className="w-4 h-4 mr-1" />
-              {rental.billboard}
+              {rental.billboards_enhanced?.billboard_identifier} - {rental.billboards_enhanced?.location}
             </CardDescription>
           </div>
-          <Badge className={getStatusColor(getOverallStatus())}>
-            {getOverallStatus()}
+          <Badge className={rental.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+            {rental.status}
           </Badge>
         </div>
       </CardHeader>
@@ -82,14 +80,14 @@ const RentalCard: React.FC<RentalCardProps> = ({
             <div className="space-y-1 text-sm">
               <div className="flex items-center">
                 <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-                <span>Start: {rental.startDate}</span>
+                <span>Start: {rental.start_date}</span>
               </div>
               <div className="flex items-center">
                 <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-                <span>End: {rental.endDate}</span>
+                <span>End: {rental.end_date}</span>
               </div>
               <div className="text-blue-600 font-medium">
-                Duration: {calculateDuration(rental.startDate, rental.endDate)}
+                Duration: {calculateDuration(rental.start_date, rental.end_date)}
               </div>
             </div>
           </div>
@@ -98,21 +96,21 @@ const RentalCard: React.FC<RentalCardProps> = ({
             <h4 className="font-medium text-gray-900">Financial Details</h4>
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Total Rent:</span>
-                <span className="font-semibold">৳{rental.totalAmount.toLocaleString()}</span>
+                <span className="text-gray-600">Rental Amount:</span>
+                <span className="font-semibold">৳{rental.rental_amount?.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">PVC Cost:</span>
-                <span>৳{rental.pvcCost.toLocaleString()}</span>
+                <span className="text-gray-600">Frequency:</span>
+                <span>{rental.invoice_frequency}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Fitting Cost:</span>
-                <span>৳{rental.fittingCost.toLocaleString()}</span>
+                <span className="text-gray-600">Payment Structure:</span>
+                <span>{rental.payment_structure}</span>
               </div>
               <div className="flex justify-between pt-1 border-t">
-                <span className="text-gray-600">Total:</span>
-                <span className="font-bold text-green-600">
-                  ৳{(rental.totalAmount + rental.pvcCost + rental.fittingCost).toLocaleString()}
+                <span className="text-gray-600">Status:</span>
+                <span className={`font-bold ${rental.status === 'Active' ? 'text-green-600' : 'text-gray-600'}`}>
+                  {rental.status}
                 </span>
               </div>
             </div>
@@ -121,17 +119,18 @@ const RentalCard: React.FC<RentalCardProps> = ({
           <div className="space-y-3">
             <h4 className="font-medium text-gray-900">Payment Status</h4>
             <div className="space-y-2">
-              {rental.invoices && rental.invoices.slice(0, 3).map((invoice, index) => (
-                <div key={invoice.id} className="flex justify-between text-sm">
-                  <span>Invoice {index + 1}:</span>
-                  {getInvoiceStatusBadge(invoice.status)}
-                </div>
-              ))}
-              {rental.invoices && rental.invoices.length > 3 && (
-                <div className="text-xs text-gray-500">
-                  +{rental.invoices.length - 3} more invoices...
-                </div>
-              )}
+              <div className="flex justify-between text-sm">
+                <span>Billboard:</span>
+                <span className="font-medium">{rental.billboards_enhanced?.billboard_identifier}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Size:</span>
+                <span>{rental.billboards_enhanced?.size}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Type:</span>
+                <span>{rental.billboards_enhanced?.type}</span>
+              </div>
             </div>
           </div>
 
@@ -159,7 +158,7 @@ const RentalCard: React.FC<RentalCardProps> = ({
                 Manual Invoice
               </Button>
             </div>
-            {!rental.invoices.every(invoice => invoice.status === 'paid') && (
+            {rental.status === 'Active' && (
               <Button 
                 className="w-full bg-green-600 hover:bg-green-700"
                 onClick={() => onRecordPayment(rental.id)}
