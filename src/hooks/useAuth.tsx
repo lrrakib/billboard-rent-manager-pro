@@ -27,19 +27,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user role from user_profiles table
-          const { data: profile } = await supabase
-            .from('user_profiles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .single();
-          
-          setUserRole(profile?.role || 'viewer');
+          // Defer the role fetch to avoid auth callback deadlock
+          setTimeout(() => {
+            supabase
+              .from('user_profiles')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .single()
+              .then(({ data: profile }) => {
+                setUserRole(profile?.role || 'viewer');
+              });
+          }, 0);
         } else {
           setUserRole(null);
         }
