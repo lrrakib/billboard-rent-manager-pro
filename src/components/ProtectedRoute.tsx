@@ -33,6 +33,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     'viewer': 1,
     'manager': 2,
     'admin': 3,
+    'super_admin': 4,
   };
 
   const userRoleLevel = roleHierarchy[userRole || 'viewer'] || 1;

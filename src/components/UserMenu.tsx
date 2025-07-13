@@ -20,6 +20,8 @@ const UserMenu = () => {
 
   const getRoleColor = (role: string | null) => {
     switch (role) {
+      case 'super_admin':
+        return 'bg-purple-100 text-purple-800';
       case 'admin':
         return 'bg-red-100 text-red-800';
       case 'manager':
