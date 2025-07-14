@@ -19,6 +19,8 @@ import RentalDetails from "./pages/RentalDetails";
 import Payments from "./pages/Payments";
 import Reports from "./pages/Reports";
 import Invoices from "./pages/Invoices";
+import BillboardDetails from "./pages/BillboardDetails";
+import ClientDetails from "./pages/ClientDetails";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,9 +46,19 @@ const App = () => (
                   <Billboards />
                 </ProtectedRoute>
               } />
+              <Route path="billboards/:id" element={
+                <ProtectedRoute requiredRole="manager">
+                  <BillboardDetails />
+                </ProtectedRoute>
+              } />
               <Route path="clients" element={
                 <ProtectedRoute requiredRole="manager">
                   <Clients />
+                </ProtectedRoute>
+              } />
+              <Route path="clients/:id" element={
+                <ProtectedRoute requiredRole="manager">
+                  <ClientDetails />
                 </ProtectedRoute>
               } />
               <Route path="partners" element={
@@ -69,7 +81,7 @@ const App = () => (
                   <RentalDetails />
                 </ProtectedRoute>
               } />
-              <Route path="payments" element={
+              <Route path="financial" element={
                 <ProtectedRoute requiredRole="admin">
                   <Payments />
                 </ProtectedRoute>

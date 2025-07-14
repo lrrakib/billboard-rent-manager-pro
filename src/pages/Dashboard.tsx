@@ -21,21 +21,38 @@ const Dashboard = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
-      const [billboards, clients, rentals, payments] = await Promise.all([
+      const [billboards, clients, rentals, payments, upcomingInvoices] = await Promise.all([
         supabase.from('billboards_enhanced').select('id', { count: 'exact' }),
         supabase.from('clients_enhanced').select('id', { count: 'exact' }),
         supabase.from('billboard_rentals').select('rental_amount').eq('status', 'Active'),
-        supabase.from('client_payments').select('amount').eq('status', 'Received')
+        supabase.from('client_payments').select('amount').eq('status', 'Received'),
+        supabase.from('billboard_rentals').select(`
+          id,
+          rental_amount,
+          invoice_date,
+          invoice_frequency,
+          clients_enhanced!billboard_rentals_client_id_fkey(company_name),
+          billboards_enhanced!billboard_rentals_billboard_id_fkey(location, billboard_identifier)
+        `).eq('status', 'Active').limit(5)
       ]);
 
       const totalRevenue = rentals.data?.reduce((sum, rental) => sum + (rental.rental_amount || 0), 0) || 0;
       const totalReceived = payments.data?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
+
+      // Calculate upcoming invoices (within next 7 days)
+      const today = new Date();
+      const upcomingInvoicesData = upcomingInvoices.data?.filter(rental => {
+        const invoiceDay = rental.invoice_date;
+        const currentDay = today.getDate();
+        return Math.abs(invoiceDay - currentDay) <= 7;
+      }) || [];
 
       return {
         billboards: billboards.count || 0,
         clients: clients.count || 0,
         totalRevenue,
         totalReceived,
+        upcomingInvoices: upcomingInvoicesData,
       };
     }
   });
@@ -128,6 +145,36 @@ const Dashboard = () => {
               description="Payments received"
             />
           </div>
+        )}
+
+        {/* Upcoming Invoices */}
+        {stats?.upcomingInvoices && stats.upcomingInvoices.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Upcoming Invoices</CardTitle>
+              <CardDescription>
+                Invoices due within the next 7 days
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {stats.upcomingInvoices.map((rental: any) => (
+                  <div key={rental.id} className="flex justify-between items-center p-3 border rounded-lg">
+                    <div>
+                      <p className="font-medium">{rental.clients_enhanced?.company_name}</p>
+                      <p className="text-sm text-gray-600">
+                        {rental.billboards_enhanced?.billboard_identifier} - {rental.billboards_enhanced?.location}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-green-600">৳{rental.rental_amount?.toLocaleString()}</p>
+                      <p className="text-sm text-gray-600">Due: {rental.invoice_date}th</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Role-based Content */}

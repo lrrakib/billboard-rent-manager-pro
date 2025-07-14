@@ -9,9 +9,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import BillboardDetails from '@/components/BillboardDetails';
 import RentalManagementModal from '@/components/RentalManagementModal';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import { MapPin, Plus, Search, Edit, Calendar, DollarSign, TrendingUp, FileImage } from 'lucide-react';
 
 const Billboards = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -19,74 +23,34 @@ const Billboards = () => {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isRentalModalOpen, setIsRentalModalOpen] = useState(false);
 
-  // Enhanced mock billboard data with new fields
-  const billboards = [
-    {
-      id: 1,
-      billboard_identifier: "BB-001",
-      location: "Downtown Plaza",
-      size: "14x48 ft",
-      total_sft: 672,
-      type: "Billboard",
-      status: "Rented",
-      currentClient: "Tech Corp",
-      rentAmount: 600000,
-      imageUrls: ["/api/placeholder/300/200"],
-      total_installation_cost: 450000,
-      installationDate: "2023-01-15",
-      yearlyProfit: 150000
-    },
-    {
-      id: 2,
-      billboard_identifier: "UP-002",
-      location: "Highway Exit 12",
-      size: "14x48 ft",
-      total_sft: 672,
-      type: "Unipole",
-      status: "Available",
-      currentClient: null,
-      rentAmount: 480000,
-      imageUrls: ["/api/placeholder/300/200"],
-      total_installation_cost: 380000,
-      installationDate: "2023-03-22",
-      yearlyProfit: 100000
-    },
-    {
-      id: 3,
-      billboard_identifier: "NS-003",
-      location: "Shopping Mall Entrance",
-      size: "10x20 ft",
-      total_sft: 200,
-      type: "Neon Sign Only",
-      status: "Maintenance",
-      currentClient: null,
-      rentAmount: 360000,
-      imageUrls: ["/api/placeholder/300/200"],
-      total_installation_cost: 280000,
-      installationDate: "2023-05-10",
-      yearlyProfit: 80000
-    },
-    {
-      id: 4,
-      billboard_identifier: "BB-004",
-      location: "Airport Terminal",
-      size: "20x60 ft",
-      total_sft: 1200,
-      type: "Billboard",
-      status: "Rented",
-      currentClient: "Fashion Brand",
-      rentAmount: 800000,
-      imageUrls: ["/api/placeholder/300/200"],
-      total_installation_cost: 600000,
-      installationDate: "2023-02-28",
-      yearlyProfit: 200000
+  // Fetch billboards from database
+  const { data: billboards = [], isLoading, refetch } = useQuery({
+    queryKey: ['billboards'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('billboards_enhanced')
+        .select(`
+          *,
+          land_owners!billboards_enhanced_land_owner_id_fkey(name),
+          billboard_rentals!billboard_rentals_billboard_id_fkey(
+            id,
+            status,
+            rental_amount,
+            clients_enhanced!billboard_rentals_client_id_fkey(company_name)
+          )
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
     }
-  ];
+  });
+
 
   const filteredBillboards = billboards.filter(billboard => {
-    const matchesSearch = billboard.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         billboard.billboard_identifier.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || billboard.status.toLowerCase() === statusFilter.toLowerCase();
+    const matchesSearch = billboard.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         billboard.billboard_identifier?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || billboard.status?.toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesStatus;
   });
 
@@ -109,8 +73,16 @@ const Billboards = () => {
   };
 
   const handleViewDetails = (billboard: any) => {
-    setSelectedBillboard(billboard);
-    setIsDetailsOpen(true);
+    navigate(`/billboards/${billboard.id}`);
+  };
+
+  const handleEditBillboard = (billboard: any) => {
+    // TODO: Implement edit functionality
+    console.log('Edit billboard:', billboard);
+  };
+
+  const handleViewInstallation = (billboard: any) => {
+    navigate(`/billboards/${billboard.id}`);
   };
 
   const handleManageRental = (billboard: any) => {
@@ -184,9 +156,15 @@ const Billboards = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label htmlFor="rentAmount">Expected Yearly Rent (৳)</Label>
-                  <Input id="rentAmount" type="number" placeholder="600000" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="agreementStart">Agreement Start Date</Label>
+                    <Input id="agreementStart" type="date" />
+                  </div>
+                  <div>
+                    <Label htmlFor="agreementEnd">Agreement End Date</Label>
+                    <Input id="agreementEnd" type="date" />
+                  </div>
                 </div>
                 <div className="flex justify-end space-x-2 pt-4">
                   <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
@@ -226,94 +204,113 @@ const Billboards = () => {
         </div>
 
         {/* Billboard Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBillboards.map((billboard) => (
-            <Card key={billboard.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-              <div className="aspect-video bg-gray-200 relative">
-                <img 
-                  src={billboard.imageUrls[0]} 
-                  alt={billboard.location}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute top-2 left-2 flex gap-2">
-                  <Badge className={getStatusColor(billboard.status)}>
-                    {billboard.status}
-                  </Badge>
-                  <Badge className={getTypeColor(billboard.type)}>
-                    {billboard.type}
-                  </Badge>
-                </div>
-                <div className="absolute top-2 right-2">
-                  <Badge variant="outline" className="bg-white">
-                    {billboard.billboard_identifier}
-                  </Badge>
-                </div>
-              </div>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{billboard.location}</CardTitle>
-                  <Button variant="ghost" size="sm">
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                </div>
-                <CardDescription>
-                  <div className="flex items-center text-gray-600">
-                    <MapPin className="w-4 h-4 mr-1" />
-                    {billboard.size} • {billboard.total_sft} sq ft
-                  </div>
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Yearly Rent:</span>
-                    <span className="font-semibold text-green-600">৳{billboard.rentAmount?.toLocaleString()}</span>
-                  </div>
-                  {billboard.currentClient && (
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Current Client:</span>
-                      <span className="font-medium">{billboard.currentClient}</span>
+        {isLoading ? (
+          <div className="text-center py-8">Loading billboards...</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredBillboards.map((billboard) => {
+              const currentRental = billboard.billboard_rentals?.[0];
+              const currentClient = currentRental?.clients_enhanced?.company_name;
+              return (
+              <Card key={billboard.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                <div className="aspect-video bg-gray-200 relative">
+                  {billboard.image_urls && billboard.image_urls[0] ? (
+                    <img 
+                      src={billboard.image_urls[0]} 
+                      alt={billboard.location}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                      <FileImage className="w-12 h-12 text-gray-400" />
                     </div>
                   )}
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Installation Cost:</span>
-                    <span className="font-medium text-red-600">৳{billboard.total_installation_cost?.toLocaleString()}</span>
+                  <div className="absolute top-2 left-2 flex gap-2">
+                    <Badge className={getStatusColor(billboard.status)}>
+                      {billboard.status}
+                    </Badge>
+                    <Badge className={getTypeColor(billboard.type)}>
+                      {billboard.type}
+                    </Badge>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Yearly Profit:</span>
-                    <span className={`font-semibold ${billboard.yearlyProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      ৳{billboard.yearlyProfit?.toLocaleString()}
-                    </span>
+                  <div className="absolute top-2 right-2">
+                    <Badge variant="outline" className="bg-white">
+                      {billboard.billboard_identifier}
+                    </Badge>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Installed:</span>
-                    <div className="flex items-center text-sm">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      {billboard.installationDate}
+                </div>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-lg">{billboard.location}</CardTitle>
+                    <Button variant="ghost" size="sm" onClick={() => handleEditBillboard(billboard)}>
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <CardDescription>
+                    <div className="flex items-center text-gray-600">
+                      <MapPin className="w-4 h-4 mr-1" />
+                      {billboard.size} • {billboard.total_sft} sq ft
+                    </div>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Monthly Rent:</span>
+                      <span className="font-semibold text-green-600">৳{billboard.rent_amount?.toLocaleString() || 'Not set'}</span>
+                    </div>
+                    {currentClient && (
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Current Client:</span>
+                        <span className="font-medium">{currentClient}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Installation Cost:</span>
+                      <span className="font-medium text-red-600">৳{billboard.total_installation_cost?.toLocaleString() || '0'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Land Owner:</span>
+                      <span className="text-sm">{billboard.land_owners?.name || 'Not assigned'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Installed:</span>
+                      <div className="flex items-center text-sm">
+                        <Calendar className="w-3 h-3 mr-1" />
+                        {billboard.installation_date || 'Not set'}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="mt-4 pt-4 border-t space-y-2">
-                  <Button 
-                    className="w-full" 
-                    variant="outline"
-                    onClick={() => handleViewDetails(billboard)}
-                  >
-                    <TrendingUp className="w-4 h-4 mr-2" />
-                    View Installation Details
-                  </Button>
-                  <Button 
-                    className="w-full" 
-                    variant={billboard.status === 'Available' ? 'default' : 'outline'}
-                    onClick={() => handleManageRental(billboard)}
-                  >
-                    {billboard.status === 'Available' ? 'Rent Out' : 'Manage Rental'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  <div className="mt-4 pt-4 border-t space-y-2">
+                    <Button 
+                      className="w-full" 
+                      variant="outline"
+                      onClick={() => handleViewDetails(billboard)}
+                    >
+                      View Details
+                    </Button>
+                    <Button 
+                      className="w-full" 
+                      variant="outline"
+                      onClick={() => handleViewInstallation(billboard)}
+                    >
+                      <TrendingUp className="w-4 h-4 mr-2" />
+                      View Installation Details
+                    </Button>
+                    <Button 
+                      className="w-full" 
+                      variant={billboard.status === 'Available' ? 'default' : 'outline'}
+                      onClick={() => handleManageRental(billboard)}
+                    >
+                      {billboard.status === 'Available' ? 'Rent Out' : 'Manage Rental'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+            })}
+          </div>
+        )}
 
         {filteredBillboards.length === 0 && (
           <div className="text-center py-12">
