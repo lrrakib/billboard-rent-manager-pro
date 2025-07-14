@@ -648,24 +648,6 @@ export type Database = {
         }
         Relationships: []
       }
-      profiles: {
-        Row: {
-          id: number
-          role: string | null
-          user_id: string | null
-        }
-        Insert: {
-          id?: never
-          role?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          id?: never
-          role?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       user_profiles: {
         Row: {
           created_at: string
